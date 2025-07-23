@@ -1,0 +1,324 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f9f9f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 400px;
+    margin: 10px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+h1 {
+    font-size: 1.6em;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* video와 canvas를 감싸는 영역에 relative 포지션을 줍니다. */
+.webcam-area {
+    position: relative;
+    width: 100%;
+    padding-top: 75%; /* 4:3 비율 유지 */
+    margin-bottom: 10px;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #888;
+    font-size: 0.9em;
+}
+
+#webcamPlaceholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 1;
+}
+
+/* video와 canvas를 .webcam-area 내에 겹쳐서 배치 */
+video,
+#webcamCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    z-index: 2;
+}
+
+button {
+    background-color: #ff7f50;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    font-size: 1em;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #ff6347;
+}
+
+/* 이미지 업로드 섹션 전체 컨테이너 */
+.upload-section {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    background-color: #fcfcfc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* 내부 요소 간격 (파일 선택 랩퍼와 이미지 업로드 버튼, 미리보기 사이) */
+}
+
+/* "파일 선택" 버튼과 파일명 표시를 감싸는 랩퍼 */
+.file-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 300px; /* 적절한 최대 너비 설정 (조절 가능) */
+    gap: 8px; /* 버튼과 파일명 사이 간격 */
+}
+
+/* "파일 선택" 버튼의 시각적인 스타일 */
+.file-select-button {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+}
+
+.file-select-button:hover {
+    background-color: #e0e0e0;
+}
+
+/* 파일명이 표시될 텍스트 박스 스타일 */
+.file-name-display {
+    flex-grow: 1;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #666;
+    font-size: 0.9em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* 실제 input type="file" 요소는 숨김 */
+input[type="file"]#imageUpload {
+    display: none;
+}
+
+/* "이미지 업로드" (실제 분석 시작) 버튼 스타일 */
+#processUploadBtn {
+    background-color: #5cb85c;
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#processUploadBtn:hover {
+    background-color: #4cae4c;
+}
+
+#uploadedImagePreview {
+    margin-top: 15px;
+    max-width: 100%;
+    min-height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#uploadedImagePreview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#result {
+    font-weight: bold;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    color: #444;
+    padding: 12px;
+    background-color: #e6f7ff;
+    border-radius: 8px;
+    border: 1px solid #b3e0ff;
+}
+
+#result.warning {
+    color: #d9534f;
+    background-color: #ffe6e6;
+    border-color: #ffb3b3;
+}
+
+input[type="text"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 15px 0 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+#searchBtn {
+    background-color: #007bff;
+    margin-top: 5px;
+}
+
+#searchBtn:hover {
+    background-color: #0056b3;
+}
+
+#nutritionInfo {
+    margin-top: 20px;
+    text-align: left;
+    background-color: #fefefe;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
+
+#nutritionInfo h3 {
+    font-size: 1.1em;
+    color: #28a745;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#nutritionInfo ul {
+    list-style: none;
+    padding: 0;
+}
+
+#nutritionInfo li {
+    margin: 8px 0;
+    font-size: 0.95em;
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+#nutritionInfo li:last-child {
+    border-bottom: none;
+}
+
+#nutritionInfo li strong {
+    color: #555;
+}
+
+/* ✅ 모바일 최적화용 추가 스타일 */
+@media (max-width: 480px) {
+    .container {
+        margin: 5px auto;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    h1 {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+    }
+
+    button {
+        padding: 10px 18px;
+        font-size: 0.9em;
+    }
+
+    .upload-section {
+        padding: 10px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        gap: 10px; /* 모바일에서 간격 줄임 */
+    }
+
+    .file-select-button {
+        padding: 6px 10px;
+        font-size: 0.85em;
+    }
+    .file-name-display {
+        padding: 6px 8px;
+        font-size: 0.85em;
+    }
+    #processUploadBtn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+
+    #uploadedImagePreview {
+        max-height: 150px;
+        margin-top: 10px;
+    }
+
+    #uploadedImagePreview img {
+        max-height: 150px;
+    }
+
+    #result {
+        font-size: 1.1em;
+        margin-top: 20px;
+        padding: 10px;
+    }
+
+    input[type="text"] {
+        padding: 8px;
+        font-size: 0.9em;
+        width: calc(100% - 16px);
+    }
+
+    #nutritionInfo {
+        padding: 12px;
+    }
+
+    #nutritionInfo h3 {
+        font-size: 1em;
+    }
+
+    #nutritionInfo li {
+        font-size: 0.9em;
+        margin: 6px 0;
+    }
+}

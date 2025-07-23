@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>음식 영양 정보 웹앱</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽 음식 영양 정보 AI</h1>
+
+        <div class="webcam-area">
+            <video id="webcam" autoplay playsinline style="display: none;"></video>
+            <canvas id="webcamCanvas" style="display: none;"></canvas>
+            <p id="webcamPlaceholder" style="display: block;">카메라 연결 대기 중...</p>
+        </div>
+        
+        <button id="capture">📸 사진 찍기</button>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <label for="imageUpload" class="file-select-button">파일 선택</label>
+                <span id="fileNameDisplay" class="file-name-display">선택된 파일 없음</span>
+                <input type="file" id="imageUpload" accept="image/*">
+            </div>
+            <button id="processUploadBtn">⬆️ 이미지 업로드</button>
+            <div id="uploadedImagePreview"></div>
+        </div>
+        
+        <div id="result">환영합니다!<br>카메라 또는 이미지 업로드로 <br> 음식을 인식해보세요.</div>
+
+        <input type="text" id="manualInput" placeholder="직접 음식 이름 입력" />
+        <button id="searchBtn">🔍 영양정보 보기</button>
+
+        <div id="nutritionInfo"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
