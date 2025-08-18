@@ -5,19 +5,17 @@ const express = require('express');
 const axios   = require('axios');
 const http    = require('http');
 const https   = require('https');
-
 const app = express();
 const port = 3000;
 
-/* ① 공공데이터포털 '일반 인증키(Decoding)' 원본 그대로 넣기 (%문자 없는 키) */
-const SERVICE_KEY = 'ANpffJd/3oxnKfTqyCQH9n7huKt7jfDZR21RtLvv0P93tZMhecXRxub2DZoh/woVUq/xnUBFCp40B3UxZK4yew==';
+/* ① 공공데이터포털 '일반 인증키(Decoding)'를 환경 변수에서 가져오기 */
+const SERVICE_KEY = process.env.SERVICE_KEY; // 이 부분이 수정되었습니다!
 
 /* ② 식약처(MFDS) 엔드포인트 (승인 화면의 버전: FoodNtrCpntDbInfo02) */
 const MFDS_BASES = [
   'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02',
   'http://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02', // 네트워크 환경에 따라 http가 더 잘될 수 있음
 ];
-
 /* ③ 오퍼레이션 이름 — Swagger에서 확인: getFoodNtrCpntDbInq02 */
 const MFDS_OPS = [
   'getFoodNtrCpntDbInq02',  // ← 네 스샷 기준 확정된 이름
@@ -27,7 +25,6 @@ const MFDS_OPS = [
   'getFoodNtrCpntDbInfo',
   'getFoodNtrCpntDbInfoSearch',
 ];
-
 /* axios 공통 */
 const client = axios.create({
   headers: { Accept: 'application/json', 'User-Agent': 'nutrition-proxy/menu/1.4' },
@@ -36,7 +33,6 @@ const client = axios.create({
   maxRedirects: 5,
   validateStatus: () => true,
 });
-
 /* 유틸 */
 const toList = (n) => Array.isArray(n) ? n
   : Array.isArray(n?.item) ? n.item
@@ -66,7 +62,6 @@ function extractNutri(r){
   };
 }
 const hasNutri = (r)=>Object.values(extractNutri(r)).some(v=>v!=null && String(v).trim()!=='');
-
 /* MFDS 호출 — 메뉴 한글명 파라미터는 'FOOD_NM_KR' */
 async function mfdsFetch(foodNameKr){
   const qs = new URLSearchParams({
@@ -76,7 +71,6 @@ async function mfdsFetch(foodNameKr){
     pageNo: '1',
     numOfRows: '50',
   }).toString();
-
   for (const base of MFDS_BASES) {
     for (const op of MFDS_OPS) {
       const url = `${base}/${op}?${qs}`;
@@ -103,7 +97,6 @@ app.use((_, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
-
 /* 라우트 */
 app.get('/api/nutrition', async (req, res) => {
   const q = (req.query.foodName || '').trim();
@@ -132,13 +125,11 @@ app.get('/api/nutrition', async (req, res) => {
       if (sa !== sb) return sa - sb;
       return Math.abs((bestName(a)||'').length - q.length) - Math.abs((bestName(b)||'').length - q.length);
     });
-
     const top = pool.slice(0, 10);
     return res.status(200).json({
       response: { header: { resultCode: '00', resultMsg: 'OK' }, body: { items: top, totalCount: top.length } },
       note: { source: strong.length ? 'MFDS (nutrients present)' : 'MFDS (any)' }
     });
-
   } catch (e) {
     console.error('[ERR /api/nutrition]', e.message);
     return res.status(200).json({
