@@ -1,5 +1,6 @@
 // ===== Teachable Machine 모델 경로 =====
 const URL = "./model/"; // model.json / metadata.json 이 있는 폴더
+const BACKEND_URL = "여기에_나중에_백엔드_주소_넣기"; // 이 줄이 추가되었습니다!
 
 let model, maxPredictions;
 let webcam, isWebcamPlaying = false, animationFrameId;
@@ -13,14 +14,12 @@ const fileNameDisplay = document.getElementById('fileNameDisplay');
 const webcamVideo = document.getElementById('webcam');
 const webcamCanvas = document.getElementById('webcamCanvas');
 const webcamPlaceholder = document.getElementById('webcamPlaceholder');
-
 const resultDiv = document.getElementById("result");
 const nutritionInfoDiv = document.getElementById("nutritionInfo");
 
 const captureBtn = document.getElementById("capture");
 const searchBtn = document.getElementById("searchBtn");
 const manualInput = document.getElementById("manualInput");
-
 // 미리보기 데이터
 let selectedFileBase64 = null;
 
@@ -31,7 +30,6 @@ const nfmt = (v, unit = "") => {
   const num = Number(String(v).replace(/,/g, ""));
   return Number.isNaN(num) ? `${v}${unit ? ` ${unit}` : ""}` : `${num}${unit ? ` ${unit}` : ""}`;
 };
-
 // ===== API 파싱: 이름/영양소 추출 =====
 const pickName = (it) =>
   it.foodNm ?? it.food_nm ??
@@ -39,7 +37,6 @@ const pickName = (it) =>
   it.FOOD_NM_KR ?? it.food_nm_kr ??
   it.FOOD_NAME ?? it.food_name ??
   it.PRDLST_NM ?? it.prdlst_nm ?? "정보 없음";
-
 // 1) 표준 키 기반
 function pickNutriByNames(it) {
   const get = (...keys) => {
@@ -77,10 +74,8 @@ function pickNutri(it) {
   const byNames = pickNutriByNames(it);
   const hasByNames = Object.values(byNames).some(v => v !== undefined && String(v).trim() !== "");
   if (hasByNames) return byNames;
-
   const hasAmt = Object.keys(it).some(k => /^AMT_NUM\d+$/i.test(k));
   if (hasAmt) return pickNutriByAmt(it);
-
   // 마지막 휴리스틱 (키에 단서가 있는 AMT_*)
   const keys = Object.keys(it || {});
   const findAmt = (re) => {
@@ -97,10 +92,10 @@ function pickNutri(it) {
   };
 }
 const hasAnyNutri = (n) => Object.values(n).some(v => v !== undefined && String(v).trim() !== "");
-
 // ===== API 호출 =====
 async function fetchNutrition(foodName) {
-  const res = await fetch(`http://localhost:3000/api/nutrition?foodName=${encodeURIComponent(foodName)}`, { cache: "no-store" });
+  // 이 부분이 수정되었습니다!
+  const res = await fetch(`${BACKEND_URL}/api/nutrition?foodName=${encodeURIComponent(foodName)}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -110,11 +105,9 @@ function renderItem(item) {
   const name = pickName(item);
   const n = pickNutri(item);
   const serving = item.SERVING_SIZE || item.serving_size || item.SERVING_SIZE_DESC || "100 g";
-
   // 디버깅 원하면 주석 해제
   // console.log("[RAW]", item);
   // console.log("[NUTRI]", n, "serving:", serving);
-
   nutritionInfoDiv.innerHTML = `
     <div class="card">
       <h3>🥗 ${name}</h3>
@@ -128,7 +121,7 @@ function renderItem(item) {
         <li><strong>나트륨:</strong> ${nfmt(n.sodium, "mg")}</li>
       </ul>
     </div>
-  `;
+   `;
 }
 
 async function doSearch(foodName) {
@@ -175,7 +168,6 @@ async function initWebcamAndPredict() {
     await webcam.play();
     isWebcamPlaying = true;
     animationFrameId = window.requestAnimationFrame(loop);
-
     resultDiv.innerHTML = "웹캠이 활성화되었습니다. <br> 음식을 비추고 '사진 찍기'를 다시 눌러주세요.";
     resultDiv.classList.remove('warning');
     nutritionInfoDiv.innerHTML = "";
@@ -231,7 +223,6 @@ async function captureAndPredict() {
   resultDiv.innerText = "사진을 분석 중입니다...";
   resultDiv.classList.remove('warning');
   nutritionInfoDiv.innerHTML = "";
-
   try {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = webcamCanvas.width || 300;
@@ -246,7 +237,6 @@ async function captureAndPredict() {
     const top = prediction[0];
     const foodName = top.className;
     const probability = (top.probability * 100).toFixed(1);
-
     if (top.probability < 0.85) {
       resultDiv.innerHTML = "⚠️ 음식이 정확히 인식되지 않았습니다. <br> 다시 시도해 주세요.";
       resultDiv.classList.add('warning');
@@ -274,11 +264,9 @@ async function predictImage(imageElement) {
   try {
     const prediction = await model.predict(imageElement);
     prediction.sort((a, b) => b.probability - a.probability);
-
     const top = prediction[0];
     const foodName = top.className;
     const probability = (top.probability * 100).toFixed(1);
-
     if (top.probability < 0.85) {
       resultDiv.innerHTML = "⚠️ 음식이 정확히 인식되지 않았습니다. <br> 다른 이미지를 시도해 주세요.";
       resultDiv.classList.add('warning');
@@ -303,7 +291,6 @@ window.onload = async () => {
     if (!webcam || !isWebcamPlaying) initWebcamAndPredict();
     else captureAndPredict();
   });
-
   // 수동 검색
   searchBtn.addEventListener("click", () => {
     const foodName = manualInput.value.trim();
@@ -315,7 +302,6 @@ window.onload = async () => {
     }
     doSearch(foodName);
   });
-
   // 파일 선택 미리보기
   imageUpload.addEventListener('change', (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -334,7 +320,6 @@ window.onload = async () => {
       selectedFileBase64 = null;
     }
   });
-
   // 이미지 업로드(분석 시작)
   processUploadBtn.addEventListener('click', async () => {
     if (!selectedFileBase64) {
@@ -362,7 +347,6 @@ window.onload = async () => {
       const x = (tempCanvas.width / 2) - (img.width / 2) * scale;
       const y = (tempCanvas.height / 2) - (img.height / 2) * scale;
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-
       if (!model) await loadModel();
       await predictImage(tempCanvas);
     };
