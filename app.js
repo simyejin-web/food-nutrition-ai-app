@@ -156,17 +156,14 @@ async function loadModel() {
 
 // ====== 웹캠 ======
 async function initWebcamAndPredict() {
-  // 웹캠이 켜져있으면 일단 끄기 (카메라 전환 시 필요)
   if (isWebcamPlaying) {
     stopWebcam();
   }
   
   try {
-    // 전면 카메라일 때만 화면 좌우 반전 적용
     const flip = (facingMode === 'user');
     webcam = new tmImage.Webcam(300, 225, flip);
     
-    // 현재 카메라 모드(facingMode)로 웹캠 설정
     await webcam.setup({ facingMode: facingMode });
     webcamVideo.srcObject = webcam.webcam.stream;
     
@@ -202,7 +199,9 @@ function stopWebcam() {
       webcam.stop();
     }
     isWebcamPlaying = false;
-    window.cancelAnimationFrame(animationFrameId);
+    if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+    }
     const ctx = webcamCanvas.getContext('2d');
     ctx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
     webcamCanvas.style.display = 'none';
@@ -314,6 +313,7 @@ window.onload = async () => {
     }
     doSearch(foodName);
   });
+  
   // 파일 선택 미리보기
   imageUpload.addEventListener('change', (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -322,16 +322,19 @@ window.onload = async () => {
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        uploadedImage.innerHTML = `<img src="${e.target.result}" alt="업로드된 이미지">`;
+        // 'uploadedImage'가 아니라 'uploadedImagePreview'를 사용해야 합니다. (수정된 부분)
+        uploadedImagePreview.innerHTML = `<img src="${e.target.result}" alt="업로드된 이미지">`;
         selectedFileBase64 = e.target.result;
       };
       reader.readAsDataURL(file);
     } else {
       fileNameDisplay.innerText = "선택된 파일 없음";
-      uploadedImage.innerHTML = "";
+      // 'uploadedImage'가 아니라 'uploadedImagePreview'를 사용해야 합니다. (수정된 부분)
+      uploadedImagePreview.innerHTML = "";
       selectedFileBase64 = null;
     }
   });
+  
   // 이미지 업로드(분석 시작)
   processUploadBtn.addEventListener('click', async () => {
     if (!selectedFileBase64) {
