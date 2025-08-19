@@ -322,3 +322,54 @@ input[type="text"] {
         margin: 6px 0;
     }
 }
+
+/* ===== 모바일 가로 모드 최적화 ===== */
+/* 화면 방향이 가로이고, 화면 높이가 500px 이하일 때만 적용 (스마트폰 가로 모드 겨냥) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .container {
+    /* 좌우 여백을 줄이고 너비를 최대로 활용 */
+    max-width: 95vw; 
+    padding: 10px;
+    margin: 5px auto;
+  }
+
+  h1 {
+    font-size: 1.3em; /* 제목 크기 살짝 줄임 */
+    margin-bottom: 10px;
+  }
+  
+  /* 웹캠, 업로드, 결과 영역의 상하 여백을 줄여서 더 많은 내용을 표시 */
+  .webcam-area, .upload-section, #result, #nutritionInfo {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  
+  button {
+    padding: 8px 15px; /* 버튼 크기 살짝 줄임 */
+  }
+
+  #uploadedImagePreview img {
+    max-height: 120px; /* 이미지 미리보기 높이 제한 */
+  }
+
+  /* 폰트 크기 미세 조정 */
+  #nutritionInfo h3 {
+    font-size: 1em;
+  }
+  #nutritionInfo li {
+    font-size: 0.85em;
+  }
+}
+
+/* ===== 카메라 전환 버튼 모바일에서만 보이게 하기 ===== */
+/* 평소에는 버튼을 숨김 */
+#switchCamBtn {
+  display: none;
+}
+
+/* 화면 너비가 768px 이하일 때만 (태블릿/모바일) 버튼을 다시 보여줌 */
+@media (max-width: 768px) {
+  #switchCamBtn {
+    display: inline-block; /* 버튼을 다시 보이게 함 */
+  }
+}
