@@ -6,7 +6,6 @@
   <title>음식 영양 정보 웹앱</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- (선택) 이미지 인식 모델을 붙일 때 사용 -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 </head>
@@ -14,7 +13,6 @@
   <div class="container">
     <h1>🍽 음식 영양 정보 AI</h1>
 
-    <!-- 웹캠 영역 -->
     <div class="webcam-area">
       <video id="webcam" autoplay playsinline style="display:none"></video>
       <canvas id="webcamCanvas" style="display:none"></canvas>
@@ -22,8 +20,8 @@
     </div>
 
     <button id="capture">📸 사진 찍기</button>
+    <button id="switchCamBtn">🔄 카메라 전환</button>
 
-    <!-- 업로드 영역 -->
     <div class="upload-section">
       <div class="file-input-wrapper">
         <label for="imageUpload" class="file-select-button">파일 선택</label>
@@ -34,16 +32,13 @@
       <div id="uploadedImagePreview"></div>
     </div>
 
-    <!-- 안내/상태 -->
     <div id="result" aria-live="polite">
       환영합니다!<br>카메라 또는 이미지 업로드로 음식을 인식해보세요.
     </div>
 
-    <!-- 수동 검색 -->
     <input type="text" id="manualInput" placeholder="직접 음식 이름 입력" />
     <button id="searchBtn">🔍 영양정보 보기</button>
 
-    <!-- 결과 카드 -->
     <div id="nutritionInfo"></div>
   </div>
 
