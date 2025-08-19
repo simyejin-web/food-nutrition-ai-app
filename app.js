@@ -155,59 +155,52 @@ async function loadModel() {
 }
 
 // ====== 웹캠 ======
-async function initWebcamAndPredict() {
-  if (isWebcamPlaying) {
-    stopWebcam();
-  }
-  
+async function setupWebcam() {
   try {
     const flip = (facingMode === 'user');
     webcam = new tmImage.Webcam(300, 225, flip);
-    
     await webcam.setup({ facingMode: facingMode });
-    webcamVideo.srcObject = webcam.webcam.stream;
-    
     await webcam.play();
     isWebcamPlaying = true;
     animationFrameId = window.requestAnimationFrame(loop);
-    resultDiv.innerHTML = "웹캠이 활성화되었습니다. <br> 음식을 비추고 '사진 찍기'를 눌러주세요.";
-    resultDiv.classList.remove('warning');
-    nutritionInfoDiv.innerHTML = "";
-    uploadedImagePreview.innerHTML = "";
-    fileNameDisplay.innerText = "선택된 파일 없음";
-
+    
+    webcamVideo.srcObject = webcam.webcam.stream;
     webcamCanvas.style.display = 'block';
     webcamVideo.style.display = 'block';
     webcamPlaceholder.style.display = 'none';
+
+    resultDiv.innerHTML = "웹캠이 활성화되었습니다. <br> 음식을 비추고 '사진 찍기'를 눌러주세요.";
+    nutritionInfoDiv.innerHTML = "";
+    uploadedImagePreview.innerHTML = "";
+    fileNameDisplay.innerText = "선택된 파일 없음";
   } catch (error) {
     console.error("웹캠 초기화 실패:", error);
-    resultDiv.innerHTML = "⚠️ 웹캠 초기화에 실패했습니다. <br> 카메라 권한을 허용했는지 확인하거나 <br> 다른 카메라를 시도해주세요.";
+    resultDiv.innerHTML = `⚠️ 웹캠 초기화에 실패했습니다. <br> 카메라 권한을 허용했는지 확인해주세요. <br> (${error.name}: ${error.message})`;
     resultDiv.classList.add('warning');
-    webcamCanvas.style.display = 'none';
-    webcamVideo.style.display = 'none';
-    webcamPlaceholder.style.display = 'block';
+    webcam = null;
+    isWebcamPlaying = false;
   }
 }
 
 function stopWebcam() {
-  if (webcam && webcam.webcam && webcam.webcam.stream) {
-    if (webcam.webcam.stream.active) {
-      webcam.webcam.stream.getTracks().forEach(track => track.stop());
-    }
-    webcamVideo.srcObject = null;
+  if (webcam) {
     if (typeof webcam.stop === 'function') {
       webcam.stop();
     }
-    isWebcamPlaying = false;
-    if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId);
+    if (webcam.webcam && webcam.webcam.stream && webcam.webcam.stream.active) {
+      webcam.webcam.stream.getTracks().forEach(track => track.stop());
     }
-    const ctx = webcamCanvas.getContext('2d');
-    ctx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
-    webcamCanvas.style.display = 'none';
-    webcamVideo.style.display = 'none';
-    webcamPlaceholder.style.display = 'block';
   }
+  webcam = null;
+  isWebcamPlaying = false;
+  if (animationFrameId) {
+    window.cancelAnimationFrame(animationFrameId);
+  }
+  const ctx = webcamCanvas.getContext('2d');
+  ctx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
+  webcamCanvas.style.display = 'none';
+  webcamVideo.style.display = 'none';
+  webcamPlaceholder.style.display = 'block';
 }
 
 async function loop() {
@@ -219,14 +212,12 @@ async function loop() {
 }
 
 async function captureAndPredict() {
-  if (!webcam || !isWebcamPlaying) {
-    await initWebcamAndPredict();
+  if (!isWebcamPlaying) {
+    await setupWebcam();
     return;
   }
 
   resultDiv.innerText = "사진을 분석 중입니다...";
-  resultDiv.classList.remove('warning');
-  nutritionInfoDiv.innerHTML = "";
   try {
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = webcamCanvas.width || 300;
@@ -243,18 +234,18 @@ async function captureAndPredict() {
     const probability = (top.probability * 100).toFixed(1);
     if (top.probability < 0.85) {
       resultDiv.innerHTML = "⚠️ 음식이 정확히 인식되지 않았습니다. <br> 다시 시도해 주세요.";
-      resultDiv.classList.add('warning');
-      nutritionInfoDiv.innerHTML = "";
     } else {
       resultDiv.innerText = `🤖 ${foodName} (${probability}%)`;
-      resultDiv.classList.remove('warning');
       await doSearch(foodName);
     }
   } catch (error) {
     console.error("사진 분석 중 오류 발생:", error);
     resultDiv.innerHTML = "사진 분석 중 오류가 발생했습니다. <br> 다시 시도해주세요.";
-    resultDiv.classList.add('warning');
-    nutritionInfoDiv.innerHTML = "";
+  } finally {
+    resultDiv.classList.remove('warning');
+    if (resultDiv.textContent.includes('오류') || resultDiv.textContent.includes('인식되지 않았습니다')) {
+      resultDiv.classList.add('warning');
+    }
   }
 }
 
@@ -274,7 +265,6 @@ async function predictImage(imageElement) {
     if (top.probability < 0.85) {
       resultDiv.innerHTML = "⚠️ 음식이 정확히 인식되지 않았습니다. <br> 다른 이미지를 시도해 주세요.";
       resultDiv.classList.add('warning');
-      nutritionInfoDiv.innerHTML = "";
     } else {
       resultDiv.innerText = `🤖 ${foodName} (${probability}%)`;
       resultDiv.classList.remove('warning');
@@ -284,22 +274,19 @@ async function predictImage(imageElement) {
     console.error("이미지 예측 중 오류 발생:", error);
     resultDiv.innerHTML = "이미지 예측 중 오류가 발생했습니다. <br> 모델이 올바른지 확인해주세요.";
     resultDiv.classList.add('warning');
-    nutritionInfoDiv.innerHTML = "";
   }
 }
 
 // ====== 초기 바인딩 ======
 window.onload = async () => {
   // 사진 찍기
-  captureBtn.addEventListener("click", () => {
-    if (!webcam || !isWebcamPlaying) initWebcamAndPredict();
-    else captureAndPredict();
-  });
+  captureBtn.addEventListener("click", captureAndPredict);
 
   // 카메라 전환 버튼
-  switchCamBtn.addEventListener("click", () => {
+  switchCamBtn.addEventListener("click", async () => {
+    stopWebcam();
     facingMode = (facingMode === 'user') ? 'environment' : 'user';
-    initWebcamAndPredict();
+    await setupWebcam();
   });
 
   // 수동 검색
@@ -311,6 +298,7 @@ window.onload = async () => {
       nutritionInfoDiv.innerHTML = "";
       return;
     }
+    stopWebcam();
     doSearch(foodName);
   });
   
@@ -338,29 +326,13 @@ window.onload = async () => {
     if (!selectedFileBase64) {
       resultDiv.innerHTML = "⚠️ 먼저 파일을 선택해주세요.";
       resultDiv.classList.add('warning');
-      nutritionInfoDiv.innerHTML = "";
       return;
     }
-
-    if (webcam && isWebcamPlaying) stopWebcam();
-
+    stopWebcam();
     resultDiv.innerText = "업로드된 이미지를 분석 중입니다...";
-    resultDiv.classList.remove('warning');
-    nutritionInfoDiv.innerHTML = "";
-
     const img = new Image();
-    img.onload = async function() {
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = 300;
-      tempCanvas.height = 225;
-      const ctx = tempCanvas.getContext('2d');
-
-      const scale = Math.min(tempCanvas.width / img.width, tempCanvas.height / img.height);
-      const x = (tempCanvas.width / 2) - (img.width / 2) * scale;
-      const y = (tempCanvas.height / 2) - (img.height / 2) * scale;
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-      if (!model) await loadModel();
-      await predictImage(tempCanvas);
+    img.onload = async () => {
+      await predictImage(img);
     };
     img.src = selectedFileBase64;
   });
