@@ -1,9 +1,10 @@
 // ===== Teachable Machine 모델 경로 =====
 const URL = "./model/"; // model.json / metadata.json 이 있는 폴더
-const BACKEND_URL = "https://food-nutrition-ai-app.onrender.com"; // 이 줄이 추가되었습니다!
+const BACKEND_URL = "https://food-nutrition-ai-app.onrender.com";
 
 let model, maxPredictions;
 let webcam, isWebcamPlaying = false, animationFrameId;
+let facingMode = 'user'; // 'user'는 전면, 'environment'는 후면
 
 // ===== DOM =====
 const imageUpload = document.getElementById('imageUpload');
@@ -18,6 +19,7 @@ const resultDiv = document.getElementById("result");
 const nutritionInfoDiv = document.getElementById("nutritionInfo");
 
 const captureBtn = document.getElementById("capture");
+const switchCamBtn = document.getElementById("switchCamBtn");
 const searchBtn = document.getElementById("searchBtn");
 const manualInput = document.getElementById("manualInput");
 // 미리보기 데이터
@@ -94,7 +96,6 @@ function pickNutri(it) {
 const hasAnyNutri = (n) => Object.values(n).some(v => v !== undefined && String(v).trim() !== "");
 // ===== API 호출 =====
 async function fetchNutrition(foodName) {
-  // 이 부분이 수정되었습니다!
   const res = await fetch(`${BACKEND_URL}/api/nutrition?foodName=${encodeURIComponent(foodName)}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -105,9 +106,6 @@ function renderItem(item) {
   const name = pickName(item);
   const n = pickNutri(item);
   const serving = item.SERVING_SIZE || item.serving_size || item.SERVING_SIZE_DESC || "100 g";
-  // 디버깅 원하면 주석 해제
-  // console.log("[RAW]", item);
-  // console.log("[NUTRI]", n, "serving:", serving);
   nutritionInfoDiv.innerHTML = `
     <div class="card">
       <h3>🥗 ${name}</h3>
@@ -158,17 +156,24 @@ async function loadModel() {
 
 // ====== 웹캠 ======
 async function initWebcamAndPredict() {
+  // 웹캠이 켜져있으면 일단 끄기 (카메라 전환 시 필요)
+  if (isWebcamPlaying) {
+    stopWebcam();
+  }
+  
   try {
-    if (!webcam) {
-      const flip = true;
-      webcam = new tmImage.Webcam(300, 225, flip);
-      await webcam.setup(); // 권한요청
-      webcamVideo.srcObject = webcam.webcam.stream;
-    }
+    // 전면 카메라일 때만 화면 좌우 반전 적용
+    const flip = (facingMode === 'user');
+    webcam = new tmImage.Webcam(300, 225, flip);
+    
+    // 현재 카메라 모드(facingMode)로 웹캠 설정
+    await webcam.setup({ facingMode: facingMode });
+    webcamVideo.srcObject = webcam.webcam.stream;
+    
     await webcam.play();
     isWebcamPlaying = true;
     animationFrameId = window.requestAnimationFrame(loop);
-    resultDiv.innerHTML = "웹캠이 활성화되었습니다. <br> 음식을 비추고 '사진 찍기'를 다시 눌러주세요.";
+    resultDiv.innerHTML = "웹캠이 활성화되었습니다. <br> 음식을 비추고 '사진 찍기'를 눌러주세요.";
     resultDiv.classList.remove('warning');
     nutritionInfoDiv.innerHTML = "";
     uploadedImagePreview.innerHTML = "";
@@ -193,7 +198,9 @@ function stopWebcam() {
       webcam.webcam.stream.getTracks().forEach(track => track.stop());
     }
     webcamVideo.srcObject = null;
-    webcam.stop();
+    if (typeof webcam.stop === 'function') {
+      webcam.stop();
+    }
     isWebcamPlaying = false;
     window.cancelAnimationFrame(animationFrameId);
     const ctx = webcamCanvas.getContext('2d');
@@ -205,17 +212,15 @@ function stopWebcam() {
 }
 
 async function loop() {
+  if (!isWebcamPlaying) return;
   webcam.update();
   const ctx = webcamCanvas.getContext("2d");
   ctx.drawImage(webcam.webcam, 0, 0, webcamCanvas.width, webcamCanvas.height);
-  if (isWebcamPlaying) {
-    animationFrameId = window.requestAnimationFrame(loop);
-  }
+  animationFrameId = window.requestAnimationFrame(loop);
 }
 
 async function captureAndPredict() {
   if (!webcam || !isWebcamPlaying) {
-    // 처음 누르면 웹캠 켜기
     await initWebcamAndPredict();
     return;
   }
@@ -291,6 +296,13 @@ window.onload = async () => {
     if (!webcam || !isWebcamPlaying) initWebcamAndPredict();
     else captureAndPredict();
   });
+
+  // 카메라 전환 버튼
+  switchCamBtn.addEventListener("click", () => {
+    facingMode = (facingMode === 'user') ? 'environment' : 'user';
+    initWebcamAndPredict();
+  });
+
   // 수동 검색
   searchBtn.addEventListener("click", () => {
     const foodName = manualInput.value.trim();
@@ -310,13 +322,13 @@ window.onload = async () => {
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        uploadedImagePreview.innerHTML = `<img src="${e.target.result}" alt="업로드된 이미지">`;
+        uploadedImage.innerHTML = `<img src="${e.target.result}" alt="업로드된 이미지">`;
         selectedFileBase64 = e.target.result;
       };
       reader.readAsDataURL(file);
     } else {
       fileNameDisplay.innerText = "선택된 파일 없음";
-      uploadedImagePreview.innerHTML = "";
+      uploadedImage.innerHTML = "";
       selectedFileBase64 = null;
     }
   });
@@ -329,7 +341,6 @@ window.onload = async () => {
       return;
     }
 
-    // 웹캠이 켜져 있으면 끄기
     if (webcam && isWebcamPlaying) stopWebcam();
 
     resultDiv.innerText = "업로드된 이미지를 분석 중입니다...";
@@ -356,4 +367,3 @@ window.onload = async () => {
   // 모델 미리 로드
   await loadModel();
 };
-
