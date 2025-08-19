@@ -322,14 +322,12 @@ window.onload = async () => {
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        // 'uploadedImage'가 아니라 'uploadedImagePreview'를 사용해야 합니다. (수정된 부분)
         uploadedImagePreview.innerHTML = `<img src="${e.target.result}" alt="업로드된 이미지">`;
         selectedFileBase64 = e.target.result;
       };
       reader.readAsDataURL(file);
     } else {
       fileNameDisplay.innerText = "선택된 파일 없음";
-      // 'uploadedImage'가 아니라 'uploadedImagePreview'를 사용해야 합니다. (수정된 부분)
       uploadedImagePreview.innerHTML = "";
       selectedFileBase64 = null;
     }
