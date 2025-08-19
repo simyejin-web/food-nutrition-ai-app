@@ -1,6 +1,6 @@
 // ===== Teachable Machine 모델 경로 =====
 const URL = "./model/"; // model.json / metadata.json 이 있는 폴더
-const BACKEND_URL = "여기에_나중에_백엔드_주소_넣기"; // 이 줄이 추가되었습니다!
+const BACKEND_URL = "https://food-nutrition-ai-app.onrender.com"; // 이 줄이 추가되었습니다!
 
 let model, maxPredictions;
 let webcam, isWebcamPlaying = false, animationFrameId;
@@ -356,3 +356,4 @@ window.onload = async () => {
   // 모델 미리 로드
   await loadModel();
 };
+
